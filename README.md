@@ -1,18 +1,30 @@
-# 🔍 Amazon Search Automation Test (Playwright + Pytest)
+import pytest
+from playwright.sync_api import sync_playwright
 
-This is a simple automation test that uses **Playwright** to validate Amazon's search functionality.
 
-## 🔧 Tech Stack
+def test_amazon_search():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
 
-- Python 3
-- Pytest
-- Playwright (Chromium)
+        page.goto("https://www.amazon.com")
 
-## 🚀 How to Run
+        # Accept cookies if prompt appears (EU users)
+        try:
+            page.click("text=Accept Cookies")
+        except:
+            pass  # No cookie popup
 
-1. Clone this repo.
-2. Install the dependencies:
+        # Search for something
+        page.fill("input#twotabsearchtextbox", "headphones")
+        page.press("input#twotabsearchtextbox", "Enter")
 
-```bash
-pip install -r requirements.txt
-playwright install
+        # Wait for results to load
+        page.wait_for_selector("div.s-main-slot")
+
+        # Assert results exist
+        results = page.query_selector_all("div.s-main-slot div[data-component-type='s-search-result']")
+        assert len(results) > 0, "No search results found."
+
+        browser.close()
+
